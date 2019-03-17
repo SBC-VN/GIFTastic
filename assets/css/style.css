@@ -1,0 +1,51 @@
+html {
+    min-height: 100%;
+    min-width:100%;
+    position: relative;
+    display: contents;
+}
+
+body {
+    height: 100%;
+    width: 100%;
+}
+
+main {
+    min-height: 100%;
+    min-width: 100%;
+}
+
+#button-section {
+    display:block;
+    min-height: 20%;
+    min-width: 100%;
+    background-color: lightgray;
+}
+
+#content-section {
+    margin-top: 2em;
+    display:block;
+    min-width: 100%;
+}
+
+#gif-section{
+    width: 70%;
+    float: left;
+}
+
+#additem-section {
+    width: 30%;
+    float: right;
+}
+
+.topic-button {
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    margin: 0.5em;
+}
+
+.gif-block {
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    margin: 0.5em;
+}
