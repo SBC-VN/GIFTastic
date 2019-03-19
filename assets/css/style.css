@@ -38,10 +38,14 @@ main {
     float: right;
 }
 
+.btn-div {
+    margin: 0.5em;
+    display: inline-block;
+}
+
 .topic-button {
     padding-left: 0.5em;
-    padding-right: 0.5em;
-    margin: 0.5em;
+    /* padding-right: 0.5em; */
 }
 
 .gif-block {
