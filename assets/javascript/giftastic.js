@@ -1,5 +1,6 @@
 var topics = ["goat","chicken","cow","sheep","pig","cat","dog"];
 
+// function that adds a new topic button to the (top) button section.
 function addButton(topic) {
     var buttonName = topic.toLowerCase()
     var newButtonDiv = $("<div class='btn-div btn-group'>");
@@ -16,19 +17,27 @@ function addButton(topic) {
     $("#button-section").append(newButtonDiv);
 }
 
+// Function that adds a topic - including a button and to the persistant data store
 function addTopic() {
-    if ($("#add-animal").val()) {
-        addButton($("#add-animal").val());
-        var prevButtonStore=localStorage.getItem("user-buttons");
+    var newTopic = $("#add-animal").val();
+    // Ignore blanks.
+    if (newTopic) {
+        // If the topic hasn't already been added.
+        if (topics.indexOf(newTopic) < 0) {
+            addButton(newTopic);
+            topics.push(newTopic);
+            var prevButtonStore=localStorage.getItem("user-buttons");
 
-        if (prevButtonStore != undefined) {
-            prevButtonStore += $("#add-animal").val() + ",";
-        }
+            if (prevButtonStore != undefined) {
+                prevButtonStore += newTopic + ",";
+            }
         
-        localStorage.setItem("user-buttons",prevButtonStore);
+            localStorage.setItem("user-buttons",prevButtonStore);
+        }
     }
 }
 
+// Sets the buttons for the inital 'seed' set of topics 
 function setInitialButtonSet() {
     for (var i=0; i<topics.length; i++) {
         addButton(topics[i]);
@@ -42,11 +51,13 @@ function setInitialButtonSet() {
             // Filter out blank spaces.
             if (storedTopics[i]) {
                 addButton(storedTopics[i]);
+                topics.push(storedTopics[i]);
             }
         }
     }
 }
 
+//  Processes a single gif json from the giphy api to add it to the gif section.
 function addGif(gifInfo,topic) {
     var gifContainer=$('<div class="gif-block">');
     gifContainer.attr("data-topic",topic);
@@ -59,10 +70,24 @@ function addGif(gifInfo,topic) {
     topicImage.attr("data-still",gifInfo.images.fixed_height_still.url);
     topicImage.attr("data-animate",gifInfo.images.fixed_height.url);
     topicImage.attr("data-state","still");
+    topicImage.attr("giphy-id",gifInfo.id);
+    gifContainer.attr("giphy-id",gifInfo.id);
+    var imgButtonDiv=$('<div class="img-btn-div">');
+    var deleteIcon=$('<img class="delete-icon">');
+    deleteIcon.attr("src","./assets/images/x-delete.jpg");
+    deleteIcon.attr("giphy-id",gifInfo.id);
+    var downloadIcon=$('<img class="download-icon">');
+    downloadIcon.attr("src","./assets/images/download_arrow.png");
+    downloadIcon.attr("giphy-id",gifInfo.id);
+    downloadIcon.attr("download-url",gifInfo.images.fixed_height.url);
     gifContainer.append(topicImage);
+    imgButtonDiv.append(deleteIcon);
+    imgButtonDiv.append(downloadIcon);
+    gifContainer.append(imgButtonDiv);
     $("#gif-section").prepend(gifContainer);
 }
 
+// Deletes a topic and everything associated with it (ie: button & gifs).
 function removeTopic(topic) {
 
     var prevButtonStore=localStorage.getItem("user-buttons");
@@ -86,8 +111,63 @@ function removeTopic(topic) {
     }
 }
 
-setInitialButtonSet();
+function removeGif(buttonRef) {
+    console.log("Gif Parent", this.parent);
+}
 
+function downloadImage(buttonRef) {
+}
+
+// Function to grab a single (favorite?) gif from the Gihpy API.
+function loadGifById(gifId) {
+    var queryURL = "https://api.giphy.com/v1/gifs/" + gifId + "?api_key=dc6zaTOxFJmzC";
+    $.ajax({
+        url: queryURL,
+        method: "GET"
+       }).then(function(response) {
+           addGif(response.data,"favorite");
+       });
+}
+
+// Loads saved favorite gifs.
+function loadFavoriteGifs() {
+    var favGifStr = localStorage.getItem("user-favorites");
+    if (favGifStr) {        
+        var favGifArray = JSON.parse(favGifStr);
+
+        for (var i=0; i<favGifArray.length; i++) {
+            // Filter out blank spaces.
+            if (favGifArray[i]) {
+                loadGifById(favGifArray[i]);
+            }
+        }
+    }
+}
+
+function addFavorite(gifContainer) {
+    gifContainer.remove();
+    $("#favorites-section").prepend(gifContainer);
+
+    var favGifStr = localStorage.getItem("user-favorites");
+    if (favGifStr) {        
+        var favGifArray = JSON.parse(favGifStr);
+    }
+    else {
+        var favGifArray = [];
+    }
+
+    favGifArray.push(gifContainer.getAttribute("giphy-id"));
+    favGifStr = JSON.stringify(favGifArray);
+    localStorage.setItem("user-favorites",favGifStr);
+}
+
+
+// Set the initial set of 'seed' topics.
+setInitialButtonSet();
+loadFavoriteGifs();
+// Handle clicks to a button.  Can be a topic button - which means 'search giphy' for the 
+//  topic, OR it can be a topic delete button.
+//
 $("#button-section").on("click","button",function() {
     var topic = $(this).attr("data-topic");
     var dataSet = parseInt($(this).attr("data-set"));
@@ -113,8 +193,19 @@ $("#button-section").on("click","button",function() {
         });
 });
 
-
+//  Handles click on an image.  Toggles from still to animated.
 $("#gif-section").on("click","img",function() {
+    console.log(this);
+    console.log(this.className);
+    if (this.className === "delete-icon") {
+        removeGif(this);
+        return;
+    }
+    else if (this.className === "download-icon") {
+        downloadImage(this);
+        return;
+    }
+
     var state = $(this).attr("data-state");
     if (state === "still") {
         $(this).attr("data-state","animate");
@@ -124,4 +215,17 @@ $("#gif-section").on("click","img",function() {
         $(this).attr("data-state","still");
         $(this).attr("src",$(this).attr("data-still"));
     }
+});
+
+$("#gif-section").on("mouseenter","img",function() {
+    this.style.border = "thick solid #0000FF";
+});
+
+$("#gif-section").on("mouseleave","img",function() {
+    this.style.border = "none";
+});
+
+// Double click means 'add to favorites'.
+$("#gif-section").on("dblclick","div",function() {
+    addFavorite(this);
 });
