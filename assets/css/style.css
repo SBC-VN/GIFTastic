@@ -66,8 +66,10 @@ main {
 .delete-icon {
     width: 50px;
     height: 50px;
-    vertical-align: top;
     display: flex;
+    position: relative;
+    top: -200px;
+    opacity: 20%;
 }
 
 .download-icon {

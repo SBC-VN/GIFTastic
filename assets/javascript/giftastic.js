@@ -72,7 +72,7 @@ function addGif(gifInfo,topic) {
     topicImage.attr("data-state","still");
     topicImage.attr("giphy-id",gifInfo.id);
     gifContainer.attr("giphy-id",gifInfo.id);
-    var imgButtonDiv=$('<div class="img-btn-div">');
+    //var imgButtonDiv=$('<div class="img-btn-div">');
     var deleteIcon=$('<img class="delete-icon">');
     deleteIcon.attr("src","./assets/images/x-delete.jpg");
     deleteIcon.attr("giphy-id",gifInfo.id);
@@ -81,9 +81,9 @@ function addGif(gifInfo,topic) {
     downloadIcon.attr("giphy-id",gifInfo.id);
     downloadIcon.attr("download-url",gifInfo.images.fixed_height.url);
     gifContainer.append(topicImage);
-    imgButtonDiv.append(deleteIcon);
-    imgButtonDiv.append(downloadIcon);
-    gifContainer.append(imgButtonDiv);
+    gifContainer.append(deleteIcon);
+    //imgButtonDiv.append(downloadIcon);
+    //gifContainer.append(imgButtonDiv);
     $("#gif-section").prepend(gifContainer);
 }
 
@@ -111,11 +111,50 @@ function removeTopic(topic) {
     }
 }
 
+// Removes a specific gif section.
 function removeGif(buttonRef) {
-    console.log("Gif Parent", this.parent);
+    var gifId = buttonRef.getAttribute("giphy-id");
+    var gifContainers = $(".gif-block");
+    
+    for (var i=0; i<gifContainers.length; i++) {
+        var checkDiv = gifContainers[i];
+        if (checkDiv.getAttribute("giphy-id") === gifId) {
+            checkDiv.remove();
+        }
+    }
+
+    var favGifStr = localStorage.getItem("user-favorites");
+    if (favGifStr) { 
+        var favGifArray = JSON.parse(favGifStr);
+        var newFavGifArray = [];
+        // Not sure splice would work inside the for loop as it modifies
+        // the array length...
+        for (var i=0; i<favGifArray.length; i++) {
+            // Filter out blank spaces.
+            if (favGifArray[i] != gifId ) {
+                newFavGifArray.push(favGifArray[i]);
+            }
+        }
+
+        if (newFavGifArray.length > 0) {
+            localStorage.setItem("user-favorites",JSON.stringify(newFavGifArray));
+        }
+        else {
+            localStorage.removeItem("user-favorites");
+        }
+    }    
 }
 
 function downloadImage(buttonRef) {
+    console.log("Download",buttonRef);
+    var downloadUrl = buttonRef.getAttribute("download-url");
+    console.log("Download URL", downloadUrl);
+    var downloadAnchor = $("<a>");
+    downloadAnchor.href = buttonRef.getAttribute("download-url");
+    downloadAnchor.download = buttonRef.getAttribute("giphy-id");
+    $("#download-section").append(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
 }
 
 // Function to grab a single (favorite?) gif from the Gihpy API.
@@ -195,8 +234,6 @@ $("#button-section").on("click","button",function() {
 
 //  Handles click on an image.  Toggles from still to animated.
 $("#gif-section").on("click","img",function() {
-    console.log(this);
-    console.log(this.className);
     if (this.className === "delete-icon") {
         removeGif(this);
         return;
